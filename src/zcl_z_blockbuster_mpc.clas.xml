@@ -180,12 +180,29 @@
      <ENTRY>Logical system</ENTRY>
      <LENGTH>132</LENGTH>
     </item>
+    <item>
+     <ID>I</ID>
+     <KEY>029</KEY>
+     <ENTRY>Number</ENTRY>
+     <LENGTH>132</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>030</KEY>
+     <ENTRY>Char20</ENTRY>
+     <LENGTH>132</LENGTH>
+    </item>
    </TPOOL>
    <DESCRIPTIONS>
     <SEOCOMPOTX>
      <CMPNAME>DEFINE_CATALOG</CMPNAME>
      <LANGU>E</LANGU>
      <DESCRIPT>DEFINE_CATALOG</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CMPNAME>DEFINE_GENRES</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>DEFINE_GENRES</DESCRIPT>
     </SEOCOMPOTX>
     <SEOCOMPOTX>
      <CMPNAME>DEFINE_MESSAGES</CMPNAME>

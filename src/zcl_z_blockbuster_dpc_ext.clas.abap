@@ -8,9 +8,11 @@ protected section.
 
   methods CATALOGSET_CREATE_ENTITY
     redefinition .
+  methods CATALOGSET_GET_ENTITY
+    redefinition .
   methods CATALOGSET_GET_ENTITYSET
     redefinition .
-  methods CATALOGSET_GET_ENTITY
+  methods GENRESSET_GET_ENTITYSET
     redefinition .
 private section.
 ENDCLASS.
@@ -210,7 +212,7 @@ ENDMETHOD.
 
   METHOD catalogset_get_entityset.
 
-    DATA: ls_entityset TYPE zcl_z_rental_store_mpc=>ts_catalog.
+    DATA: ls_entityset TYPE zcl_z_blockbuster_mpc=>ts_catalog.
 
     DATA: lt_orderby TYPE STANDARD TABLE OF string,
           wa_orderby TYPE string.
@@ -235,9 +237,89 @@ ENDMETHOD.
 
 
 
+    DATA: lv_filter        TYPE string,
+          lv_value         TYPE string,
+          lv_filter_string TYPE string,
+          lv_key           TYPE string,
+          lt_conditions    TYPE TABLE OF string,
+          lt_results       TYPE TABLE OF string,
+          lv_part          TYPE string,
+          lv_temp          TYPE string,
+          lv_position      TYPE i,
+          lv_key_pos       TYPE i,
+          lv_len           TYPE i.
+
+    lv_filter = iv_filter_string.
+
+    " Passo 1: Remover os parênteses externos
+    REPLACE ALL OCCURRENCES OF '(' IN lv_filter WITH ''.
+    REPLACE ALL OCCURRENCES OF ')' IN lv_filter WITH ''.
+
+    " Passo 2: Separar os diferentes filtros pelo operador 'or'
+    SPLIT lv_filter AT 'and' INTO TABLE lt_conditions.
+
+    " Passo 3: Loop para processar cada condição separada
+    LOOP AT lt_conditions INTO lv_part.
+
+
+      " Remover 'substringof' e espaços desnecessários
+      REPLACE ALL OCCURRENCES OF 'substringof' IN lv_part WITH ''.
+      CONDENSE lv_part.
+
+      " Encontrar a posição da vírgula que separa o valor e a chave
+      FIND ',' IN lv_part MATCH OFFSET lv_position.
+
+      " Passo 4: Extrair o valor (parte antes da vírgula)
+      lv_len = lv_position - 3. " Calcula o tamanho do valor
+      lv_value = lv_part+1(lv_len). " Extrai o valor sem aspas
+
+      " Remover aspas simples restantes do valor
+      REPLACE ALL OCCURRENCES OF '''' IN lv_value WITH ''.
+*  REPLACE ALL OCCURRENCES OF '''' IN lv_part WITH ''.
+      CHECK lv_part NE '''true'''.
+
+
+      " Passo 5: Extrair a chave (parte depois da vírgula)
+      lv_key_pos = lv_position + 2. " Posição da chave
+      lv_key = lv_part+lv_key_pos. " Pega a chave a partir da vírgula
+      CONDENSE lv_key.
+
+      " Adicionar à tabela de resultados
+      CONCATENATE lv_key ' LIKE ''%' lv_value '%''' INTO lv_temp.
+      APPEND lv_temp TO lt_results.
+
+    ENDLOOP.
+
+    DATA: lv_final_string TYPE string,
+          lv_result       TYPE string,
+          lv_first        TYPE abap_bool VALUE abap_true.
+
+    " Inicializar a string final
+    lv_final_string = ''.
+
+    LOOP AT lt_results INTO lv_temp.
+
+      " Se a string final não está vazia, significa que não é o primeiro item
+      IF lv_final_string IS NOT INITIAL.
+        CONCATENATE lv_final_string 'and' space INTO lv_final_string SEPARATED BY space.
+      ENDIF.
+
+      " Concatenar a condição atual na string final
+      lv_final_string = lv_final_string && lv_temp.
+
+    ENDLOOP.
+*CONCATENATE lv_final_string '.' into lv_final_string.
+
+    " Exibir a string final
+    lv_filter_string = lv_final_string.
+
+
+
+
+
     SELECT *
       FROM zloc_catalog
-      WHERE (iv_filter_string)
+      WHERE (lv_filter_string)
       ORDER BY (wa_orderby)
       INTO TABLE @DATA(t_movies)
       UP TO @is_paging-top ROWS
@@ -259,5 +341,21 @@ ENDMETHOD.
       APPEND ls_entityset TO et_entityset.
     ENDLOOP.
 
+  ENDMETHOD.
+
+
+  METHOD genresset_get_entityset.
+
+    DATA: ls_entityset TYPE zcl_z_blockbuster_mpc=>ts_genres.
+    SELECT *
+      FROM zloc_genre
+      ORDER BY genre
+      INTO TABLE @DATA(t_genres).
+
+    LOOP AT t_genres INTO DATA(wa_genres).
+      CLEAR ls_entityset.
+      MOVE-CORRESPONDING wa_genres TO ls_entityset.
+      APPEND ls_entityset TO et_entityset.
+    ENDLOOP.
   ENDMETHOD.
 ENDCLASS.
